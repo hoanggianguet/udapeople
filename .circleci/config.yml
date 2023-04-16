@@ -273,22 +273,48 @@ jobs:
       # - destroy-environment
         # Here's where you will add some code to rollback on failure
 
-  #   run-migrations:
-  #     docker:
-  #       # Docker image here that supports NodeJS
-  #     steps:
-  #       # Checkout code from git
-  #       - run:
-  #           name: Run migrations
-  #           command: |
-  #             # Your code here
-  #             exit 1
-  #       - run:
-  #           name: Send migration results to memstash
-  #           command: |
-  #             # Your code here
-  #             exit 1
-  #       # Here's where you will add some code to rollback on failure
+  run-migrations:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - restore_cache:
+          keys: [backend-build]
+      - run:
+          name: prepare environment for backend build
+          command: |
+            echo "Preparing environment for backend build"
+            echo ENVIRONMENT=$ENVIRONMENT >> backend/.env
+            echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> backend/.env
+            echo TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR >> backend/.env
+            echo TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> backend/.env
+            echo TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS >> backend/.env
+            echo TYPEORM_HOST=$TYPEORM_HOST >> backend/.env
+            echo TYPEORM_PORT=$TYPEORM_PORT >> backend/.env
+            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> backend/.env
+            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> backend/.env
+            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> backend/.env
+      - run:
+          name: Install dependencies
+          command: |
+            sudo apt update
+            sudo apt install -y awscli
+      - run:
+          name: Run migrations
+          command: |
+            cd backend
+            npm install
+            npm run migrations > migrations_dump.txt
+            cat migrations_dump.txt
+      
+      - run:
+          name: Send migration status to kvdb.io 
+          working_directory: ./backend
+          command: |
+            if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
+            then
+                curl https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:5}  -d '1'
+            fi
 
   #   deploy-frontend:
   #     docker:
@@ -405,8 +431,8 @@ workflows:
               only: [master]
       - configure-infrastructure:
           requires: [deploy_infrastructure]
-      # - run-migrations:
-      #     requires: [configure-infrastructure]
+      - run-migrations:
+          requires: [configure-infrastructure]
       # - deploy-frontend:
       #     requires: [run-migrations]
       # - deploy-backend:
