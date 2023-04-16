@@ -196,11 +196,10 @@ jobs:
 
     deploy-infrastructure:
       docker:
-        - image: cimg/base:stable
+        - image: amazon/aws-cli
       steps:
         # Checkout code from git
         - checkout
-        - install_awscli
         - run:
             name: Ensure back-end infrastructure exists
             command: |
@@ -218,6 +217,7 @@ jobs:
                 --tags project=udapeople \
                 --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
                 --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+
         - run:
             name: Add back-end ip to ansible inventory
             command: |
@@ -227,10 +227,13 @@ jobs:
                 --output text)
               echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
               cat .circleci/ansible/inventory.txt
+
         - persist_to_workspace:
             root: ~/
             paths:
               - project/.circleci/ansible/inventory.txt
+
+        - destroy-environment
         # Here's where you will add some code to rollback on failure
 
   #   configure-infrastructure:
