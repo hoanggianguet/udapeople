@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  slack: circleci/slack@4.9.3
+  slack: circleci/slack@4.1
 
 commands:
   notify-on-failure:
@@ -59,7 +59,14 @@ jobs:
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
-      - notify_on_failure:
+      - slack/notify:
+          event: fail
+          channel: cicd-pipeline
+          template: basic_fail_1
+      - slack/notify:
+          event: pass
+          channel: cicd-pipeline
+          template: basic_success_1
 
   build-backend:
     docker:
@@ -77,8 +84,14 @@ jobs:
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
-      - notify_on_failure:
-
+      - slack/notify:
+          event: fail
+          channel: cicd-pipeline
+          template: basic_fail_1
+      - slack/notify:
+          event: pass
+          channel: cicd-pipeline
+          template: basic_success_1
   test-frontend:
     docker:
       - image: cimg/node:13.8.0
@@ -92,7 +105,14 @@ jobs:
             cd frontend
             npm install
             npm test
-      - notify_on_failure:
+      - slack/notify:
+          event: fail
+          channel: cicd-pipeline
+          template: basic_fail_1
+      - slack/notify:
+          event: pass
+          channel: cicd-pipeline
+          template: basic_success_1
 
   test-backend:
     docker:
@@ -107,7 +127,14 @@ jobs:
             cd backend
             npm install
             npm run build
-      - notify_on_failure:
+      - slack/notify:
+          event: fail
+          channel: cicd-pipeline
+          template: basic_fail_1
+      - slack/notify:
+          event: pass
+          channel: cicd-pipeline
+          template: basic_success_1
 
   scan-frontend:
     docker:
@@ -123,7 +150,14 @@ jobs:
             npm install
             npm audit fix --audit-level=critical
             npm audit --audit-level=critical
-      - notify_on_failure:
+      - slack/notify:
+          event: fail
+          channel: cicd-pipeline
+          template: basic_fail_1
+      - slack/notify:
+          event: pass
+          channel: cicd-pipeline
+          template: basic_success_1
 
   scan-backend:
     docker:
@@ -139,7 +173,14 @@ jobs:
             npm install
             npm audit fix --audit-level=critical
             npm audit --audit-level=critical
-      - notify_on_failure:
+      - slack/notify:
+          event: fail
+          channel: cicd-pipeline
+          template: basic_fail_1
+      - slack/notify:
+          event: pass
+          channel: cicd-pipeline
+          template: basic_success_1
 
   #   deploy-infrastructure:
   #     docker:
@@ -305,14 +346,6 @@ jobs:
   #           then
   #             # your code here
   #           fi
-  notify_on_success:
-    docker:
-      - image: cimg/base
-    steps:
-      - slack/notify:
-          event: pass
-          channel: cicd-pipeline
-          template: success_tagged_deployment_1
 
 workflows:
   default:
