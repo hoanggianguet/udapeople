@@ -194,7 +194,7 @@ jobs:
           channel: cicd-pipeline
           template: basic_success_1
 
-  deploy-infrastructure:
+  deploy_infrastructure:
     docker:
       - image: amazon/aws-cli
     steps:
