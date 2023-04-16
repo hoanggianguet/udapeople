@@ -3,26 +3,26 @@ version: 2.1
 orbs:
   slack: circleci/slack@4.1
 
-commands:
-  install_awscli:
-    description: Install AWS CLI
-    steps:
-      - run:
-          name: Install AWS CLI v2
-          command: |
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            sudo ./aws/install
-  install_ansible:
-    description: Install Ansible v2
-    steps:
-      - run:
-          name: Install AWS CLI v2
-          command: |
-            sudo apt update
-            sudo apt install software-properties-common
-            sudo add-apt-repository --yes --update ppa:ansible/ansible
-            sudo apt install ansible
+# commands:
+#   install_awscli:
+#     description: Install AWS CLI
+#     steps:
+#       - run:
+#           name: Install AWS CLI v2
+#           command: |
+#             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+#             unzip awscliv2.zip
+#             sudo ./aws/install
+#   install_ansible:
+#     description: Install Ansible v2
+#     steps:
+#       - run:
+#           name: Install AWS CLI v2
+#           command: |
+#             sudo apt update
+#             sudo apt install software-properties-common
+#             sudo add-apt-repository --yes --update ppa:ansible/ansible
+#             sudo apt install ansible
   # destroy-environment:
   #   description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
   #   parameters:
@@ -35,25 +35,25 @@ commands:
   #           # Your code here
   #           exit 1
 
-  revert-migrations:
-    description: Revert the last migration if successfully run in the current workflow.
-    parameters:
-      Workflow_ID:
-        type: string
-        default: ${CIRCLE_WORKFLOW_ID:0:7}
-    steps:
-        - run:
-            name: Revert migrations
-            when: on_fail
-            command: |
-                SUCCESS=$(curl --insecure  https://kvdb.io/${KVDB_BUCKET}/migration_<< parameters.Workflow_ID >>)
-                # Logic for reverting the database state
-                if (( $SUCCESS == 1 ));
-                then
-                  cd ~/project/backend
-                  npm install
-                  npm run migration:revert
-                fi
+  # revert-migrations:
+  #   description: Revert the last migration if successfully run in the current workflow.
+  #   parameters:
+  #     Workflow_ID:
+  #       type: string
+  #       default: ${CIRCLE_WORKFLOW_ID:0:7}
+  #   steps:
+  #       - run:
+  #           name: Revert migrations
+  #           when: on_fail
+  #           command: |
+  #               SUCCESS=$(curl --insecure  https://kvdb.io/${KVDB_BUCKET}/migration_<< parameters.Workflow_ID >>)
+  #               # Logic for reverting the database state
+  #               if (( $SUCCESS == 1 ));
+  #               then
+  #                 cd ~/project/backend
+  #                 npm install
+  #                 npm run migration:revert
+  #               fi
 
 jobs:
   build-frontend:
@@ -279,7 +279,11 @@ jobs:
       - image: cimg/node:13.8.0
     steps:
       - checkout
-      - install_awscli:
+      - run:
+          name: Install dependencies
+          command: |
+            sudo apt update
+            sudo apt install -y awscli
       - run:
           name: Run migrations
           command: |
@@ -296,8 +300,8 @@ jobs:
                 curl https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
       #Rollback on failure      
-      - destroy-environment
-      - revert-migrations
+      # - destroy-environment
+      # - revert-migrations
 
   #   deploy-frontend:
   #     docker:
