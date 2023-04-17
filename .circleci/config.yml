@@ -246,20 +246,22 @@ jobs:
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
 
       - run:
+          name: install tar & gzip utility
+          command: yum install -y tar gzip
+      - run:
           name: Add back-end ip to ansible inventory
           command: |
+            cd .circleci/ansible
             aws ec2 describe-instances \
-                --query 'Reservations[*].Instances[*].PublicIpAddress' \
-                --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:5}" \
-                --output text >> ~/project/.circleci/ansible/inventory.txt
-            cat .circleci/ansible/inventory.txt
-
+            --filters Name=tag:Name,Values="backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --query  'Reservations[*].Instances[*].PublicIpAddress' \
+            --output text >> ~/project/.circleci/ansible/inventory.txt
       - persist_to_workspace:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-
       - destroy-environment
+      - revert-migrations
 
   configure-infrastructure:
     docker:
@@ -300,6 +302,7 @@ jobs:
             cat inventory.txt
             ansible-playbook -i inventory.txt configure-server.yml
       - destroy-environment
+      - revert-migrations
   
   run-migrations:
     docker:
@@ -359,7 +362,7 @@ jobs:
       - run:
           name: Install image dependencies
           command: |
-            apk add --update tar gzip ansible nodejs npm curl
+              apk add --update --no-cache tar gzip nodejs npm aws-cli curl
 
       - run:
           name: Install AWS CLI
@@ -387,7 +390,9 @@ jobs:
           command: |
             export NODE_ENV=production
             cd frontend
+            npm install
             npm run build
+            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
       
       - destroy-environment
@@ -410,27 +415,20 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            cd backend
+            apk add --update --no-cache tar gzip nodejs npm aws-cli curl ansible
             npm install
 
       - run:
-          name: Package Backend
-          command: |
-            cd backend
-            npm run build
-            tar -czf artifact.tar.gz dist/* package*
-            cd ..
-            cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files     
-      - run:
           name: Deploy backend
           command: |
-            export NODE_ENV=production
-            export TYPEORM_MIGRATIONS_DIR=./migrations
-            export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
-            export TYPEORM_MIGRATIONS=./migrations/*{.ts,.js}
-            
+            cd backend
+            npm install
+            npm run build
+            cd ..
+            tar -C backend -czvf artifact.tar.gz .
+            mkdir -p ~/project/.circleci/ansible/roles/deploy/files/
+            mv artifact.tar.gz .circleci/ansible/roles/deploy/files/artifact.tar.gz
             cd .circleci/ansible
-            cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml 
       
       - destroy-environment
