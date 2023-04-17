@@ -473,9 +473,7 @@ jobs:
               return 1
             fi
       - destroy-environment:
-          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
-      - revert-migrations:
-            workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}            
+      - revert-migrations:         
   #   cloudfront-update:
   #     docker:
   #       # Docker image here that supports AWS CLI
