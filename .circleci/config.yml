@@ -201,7 +201,7 @@ jobs:
           channel: cicd-pipeline
           template: basic_success_1
 
-  deploy_infrastructure:
+  deploy-infrastructure:
     docker:
       - image: amazon/aws-cli
     steps:
@@ -244,7 +244,7 @@ jobs:
 
       - destroy-environment
 
-  configure_infrastructure:
+  configure-infrastructure:
     docker:
       - image: python:alpine3.16
     steps:
@@ -505,13 +505,13 @@ workflows:
           requires: [build-backend]
       - scan-frontend:
           requires: [build-frontend]
-      - deploy_infrastructure:
+      - deploy-infrastructure:
           requires: [test-frontend, test-backend, scan-frontend, scan-backend]
           filters:
             branches:
               only: [master]
       - configure-infrastructure:
-          requires: [deploy_infrastructure]
+          requires: [deploy-infrastructure]
       - run-migrations:
           requires: [configure-infrastructure]
       - deploy-frontend:
