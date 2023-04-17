@@ -422,7 +422,7 @@ jobs:
 
   smoke-test:
     docker:
-      - image: python:alpine3.16
+      - image: python:3.10-alpine3.16 
     steps:
       - checkout
       - attach_workspace:
@@ -430,7 +430,7 @@ jobs:
       - run:
           name: Install image dependencies
           command: |
-            apk add --update curl nodejs npm
+            apk add --update --no-cache tar gzip nodejs npm curl aws-cli
             pip install awscli
 
       - run:
