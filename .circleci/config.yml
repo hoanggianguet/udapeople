@@ -33,7 +33,7 @@ commands:
           name: Delete S3 content
           when: on_fail
           command: |
-            aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:5} --recursive
+            aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
             exit 0
       - run:
           name: Destroy environments
