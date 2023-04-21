@@ -73,7 +73,8 @@ commands:
             command: |
                 SUCCESS=$(curl --insecure  https://kvdb.io/${KVDB_BUCKET}/migration_<< parameters.Workflow_ID >>)
                 # Logic for reverting the database state
-                if (( $SUCCESS == 1 ));
+                echo $SUCCESS
+                if [[ $SUCCESS == 1 ]];
                 then
                   cd ~/project/backend
                   npm install
@@ -484,7 +485,7 @@ jobs:
             if curl -s ${URL} | grep "Welcome"
             then
               # Change this to 0 after the job fails
-              return 0
+              return 1
             else
               return 1
             fi
@@ -568,7 +569,7 @@ workflows:
           requires: [run-migrations]
       - smoke-test:
           requires: [deploy-backend, deploy-frontend]
-      - cloudfront-update:
-          requires: [smoke-test]
-      - cleanup:
-          requires: [cloudfront-update]
+      # - cloudfront-update:
+      #     requires: [smoke-test]
+      # - cleanup:
+      #     requires: [cloudfront-update]
